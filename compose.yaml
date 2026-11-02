@@ -1,0 +1,21 @@
+services:
+  php:
+    image: webstack-php:dev
+    container_name: php
+    networks:
+      - webstack-network
+
+  nginx:
+    image: webstack-nginx:dev
+    container_name: nginx
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - php
+    networks:
+      - webstack-network
+
+networks:
+  webstack-network:
+    name: webstack-network
+    driver: bridge
