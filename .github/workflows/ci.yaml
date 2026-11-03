@@ -52,23 +52,56 @@ jobs:
           '
 
       # 7. Test HTTP response through Nginx
-      - name: HTTP health check
+      - name: HTTP integration test
         run: |
+          response_metadata=""
+
+          # Wait for the application to become available
           for attempt in $(seq 1 20); do
-            if curl -fsS http://127.0.0.1:8080/ \
-              -o /tmp/webstack-response.html &&
-              grep -Fq "PHP application is running." /tmp/webstack-response.html &&
-              grep -Fq "PHP version:" /tmp/webstack-response.html; then
-              echo "WebStack HTTP integration test passed!"
-              exit 0
+            if response_metadata=$(curl -fsS \
+              -o /tmp/webstack-response.html \
+              -w '%{http_code}\n%{content_type}' \
+              http://127.0.0.1:8080/); then
+              break
             fi
 
             echo "Waiting for WebStack... attempt $attempt"
             sleep 2
           done
 
-          echo "WebStack HTTP integration test failed!"
-          exit 1
+          # Ensure we received a response
+          if [ -z "$response_metadata" ]; then
+            echo "ERROR: WebStack did not respond!"
+            exit 1
+          fi
+
+          # Extract HTTP metadata
+          http_status=$(printf '%s\n' "$response_metadata" | sed -n '1p')
+          content_type=$(printf '%s\n' "$response_metadata" | sed -n '2p')
+
+          # Verify HTTP status
+          if [ "$http_status" != "200" ]; then
+            echo "ERROR: Expected HTTP 200, received $http_status"
+            exit 1
+          fi
+
+          # Verify Content-Type
+          if [ "$content_type" != "text/html; charset=utf-8" ]; then
+            echo "ERROR: Unexpected Content-Type: $content_type"
+            exit 1
+          fi
+
+          # Verify application content
+          grep -Fq '<title>WebStack</title>' /tmp/webstack-response.html
+          grep -Fq '<h1>WebStack</h1>' /tmp/webstack-response.html
+          grep -Fq 'PHP application is running.' /tmp/webstack-response.html
+
+          # Verify PHP version format
+          grep -Eq 'PHP version: [0-9]+\.[0-9]+\.[0-9]+' /tmp/webstack-response.html
+
+          echo "All HTTP integration assertions passed!"
+
+
 
       # 8. Display logs if something fails
       - name: Container logs on failure
