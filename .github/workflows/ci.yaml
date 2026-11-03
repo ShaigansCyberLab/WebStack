@@ -112,3 +112,16 @@ jobs:
       - name: Cleanup
         if: always()
         run: docker compose down --remove-orphans || true
+
+      # 10. Scan PHP image for vulnerabilities
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: image
+          image-ref: webstack-php:dev
+          scanners: vuln
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          ignore-unfixed: 'false'
+          format: table
+          exit-code: '1'
