@@ -1,7 +1,7 @@
 FROM php:8.5-fpm
 
 WORKDIR /var/www/html
-# Update selected Debian packages
+# -Update selected Debian packages
 RUN apt-get update \
     && apt-get install -y --no-install-recommends --only-upgrade \
         apt \
