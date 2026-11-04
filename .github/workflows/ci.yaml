@@ -1,6 +1,6 @@
 
 name: WebStack CI
-
+# Diagnostic: verify push-triggered workflow execution.
 on:
   push:
     branches:
