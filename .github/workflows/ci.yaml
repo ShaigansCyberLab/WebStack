@@ -102,17 +102,9 @@ jobs:
           echo "All HTTP integration assertions passed!"
 
 
-      # 9. Display logs if something fails
-      - name: Container logs on failure
-        if: failure()
-        run: docker compose logs --no-color || true
 
-      # 10. Clean up containers
-      - name: Cleanup
-        if: always()
-        run: docker compose down --remove-orphans || true
 
-           # 8. Scan PHP image for vulnerabilities
+      # 8. Scan PHP image for vulnerabilities
       - name: Trivy vulnerability scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
@@ -124,3 +116,13 @@ jobs:
           ignore-unfixed: 'false'
           format: table
           exit-code: '1'
+      # 9. Display logs if something fails
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose logs --no-color || true
+
+      # 10. Clean up containers
+      - name: Cleanup
+        if: always()
+        run: docker compose down --remove-orphans || true
+
