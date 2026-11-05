@@ -46,4 +46,4 @@ jobs:
           echo "Checking WebStack HTTP response..."
           curl --fail --silent --show-error http://127.0.0.1:8080/
           echo ""
-          echo "WebStack deployment successful!"
+          echo "WebStack deployment successful!great work"
