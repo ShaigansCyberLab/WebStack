@@ -1,12 +1,13 @@
 services:
   php:
-    image: webstack-php:dev
+    image: ghcr.io/shaiganscyberlab/webstack-php:${IMAGE_TAG:-latest}
     container_name: php
     networks:
       - webstack-network
+    restart: unless-stopped
 
   nginx:
-    image: webstack-nginx:dev
+    image: ghcr.io/shaiganscyberlab/webstack-nginx:${IMAGE_TAG:-latest}
     container_name: nginx
     ports:
       - "127.0.0.1:8080:80"
@@ -14,6 +15,7 @@ services:
       - php
     networks:
       - webstack-network
+    restart: unless-stopped
 
 networks:
   webstack-network:
