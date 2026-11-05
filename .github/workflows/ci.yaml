@@ -25,17 +25,12 @@ jobs:
       - name: Validate Compose configuration
         run: docker compose config --quiet
 
-      # 3. Build PHP image first
-      - name: Build PHP image
-        run: docker build -t webstack-php:dev -f docker/php/Dockerfile .
-
-      # 4. Build Nginx image second
-      - name: Build Nginx image
-        run: docker build -t webstack-nginx:dev -f docker/nginx/Dockerfile .
+      - name: Build WebStack images
+        run: docker compose build
 
       # 5. Start application containers
       - name: Start WebStack
-        run: docker compose up -d --no-build
+        run: docker compose up -d 
 
       # 6. Validate PHP syntax inside the PHP container
       - name: PHP syntax validation
@@ -123,7 +118,7 @@ jobs:
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
-          image-ref: webstack-php:dev
+          image-ref: ghcr.io/shaiganscyberlab/webstack-php:latest
           scanners: vuln
           vuln-type: os,library
           severity: HIGH,CRITICAL
@@ -148,28 +143,11 @@ jobs:
           IMAGE_OWNER: shaiganscyberlab
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Tag PHP image
-          docker tag webstack-php:dev "$REGISTRY/$IMAGE_OWNER/webstack-php:$IMAGE_TAG"
-          docker tag webstack-php:dev "$REGISTRY/$IMAGE_OWNER/webstack-php:latest"
+          docker tag "$REGISTRY/$IMAGE_OWNER/webstack-php:latest" "$REGISTRY/$IMAGE_OWNER/webstack-php:$IMAGE_TAG"
+          docker tag "$REGISTRY/$IMAGE_OWNER/webstack-nginx:latest" "$REGISTRY/$IMAGE_OWNER/webstack-nginx:$IMAGE_TAG"
 
-          # Tag Nginx image
-          docker tag webstack-nginx:dev "$REGISTRY/$IMAGE_OWNER/webstack-nginx:$IMAGE_TAG"
-          docker tag webstack-nginx:dev "$REGISTRY/$IMAGE_OWNER/webstack-nginx:latest"
-
-          # Push PHP image
           docker push "$REGISTRY/$IMAGE_OWNER/webstack-php:$IMAGE_TAG"
           docker push "$REGISTRY/$IMAGE_OWNER/webstack-php:latest"
 
-          # Push Nginx image
           docker push "$REGISTRY/$IMAGE_OWNER/webstack-nginx:$IMAGE_TAG"
           docker push "$REGISTRY/$IMAGE_OWNER/webstack-nginx:latest"
-
-      # 11. Display logs if something fails
-      - name: Container logs on failure
-        if: failure()
-        run: docker compose logs --no-color || true
-
-      # 12. Clean up containers
-      - name: Cleanup
-        if: always()
-        run: docker compose down --remove-orphans || true
