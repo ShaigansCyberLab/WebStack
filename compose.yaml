@@ -1,5 +1,8 @@
 services:
   php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
     image: ghcr.io/shaiganscyberlab/webstack-php:${IMAGE_TAG:-latest}
     container_name: php
     networks:
@@ -7,6 +10,9 @@ services:
     restart: unless-stopped
 
   nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
     image: ghcr.io/shaiganscyberlab/webstack-nginx:${IMAGE_TAG:-latest}
     container_name: nginx
     ports:

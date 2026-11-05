@@ -53,26 +53,27 @@ jobs:
           '
 
       # 7. Test HTTP response through Nginx
+      
       - name: HTTP integration test
         run: |
           response_metadata=""
 
-          # Wait for the application to become available
+          # Wait for the health endpoint to become available
           for attempt in $(seq 1 20); do
             if response_metadata=$(curl -fsS \
-              -o /tmp/webstack-response.html \
+              -o /tmp/webstack-health.json \
               -w '%{http_code}\n%{content_type}' \
-              http://127.0.0.1:8080/); then
+              http://127.0.0.1:8080/health); then
               break
             fi
 
-            echo "Waiting for WebStack... attempt $attempt"
+            echo "Waiting for WebStack health endpoint... attempt $attempt"
             sleep 2
           done
 
           # Ensure we received a response
           if [ -z "$response_metadata" ]; then
-            echo "ERROR: WebStack did not respond!"
+            echo "ERROR: WebStack health endpoint did not respond!"
             exit 1
           fi
 
@@ -87,18 +88,30 @@ jobs:
           fi
 
           # Verify Content-Type
-          if [ "$content_type" != "text/html; charset=utf-8" ]; then
+          if [ "$content_type" != "application/json; charset=utf-8" ]; then
             echo "ERROR: Unexpected Content-Type: $content_type"
             exit 1
           fi
 
-          # Verify application content
-          grep -Fq '<title>WebStack</title>' /tmp/webstack-response.html
-          grep -Fq '<h1>WebStack</h1>' /tmp/webstack-response.html
-          grep -Fq 'PHP application is running.' /tmp/webstack-response.html
+          # Verify valid JSON
+          if ! jq -e . /tmp/webstack-health.json > /dev/null; then
+            echo "ERROR: Health endpoint returned invalid JSON!"
+            exit 1
+          fi
 
-          # Verify PHP version format
-          grep -Eq 'PHP version: [0-9]+\.[0-9]+\.[0-9]+' /tmp/webstack-response.html
+          # Verify application health status
+          if [ "$(jq -r '.status' /tmp/webstack-health.json)" != "ok" ]; then
+            echo "ERROR: Application health status is not OK!"
+            cat /tmp/webstack-health.json
+            exit 1
+          fi
+
+          # Verify application identity
+          if [ "$(jq -r '.application' /tmp/webstack-health.json)" != "WebStack" ]; then
+            echo "ERROR: Unexpected application identity!"
+            cat /tmp/webstack-health.json
+            exit 1
+          fi
 
           echo "All HTTP integration assertions passed!"
 
