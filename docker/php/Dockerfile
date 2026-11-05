@@ -14,6 +14,8 @@ RUN docker-php-ext-install pdo_mysql
 
 COPY --chown=www-data:www-data src/ /var/www/html/
 
+COPY php-fpm-healthcheck.conf /usr/local/etc/php-fpm.d/zz-healthcheck.conf
+
 EXPOSE 9000
 
 CMD ["php-fpm"]
