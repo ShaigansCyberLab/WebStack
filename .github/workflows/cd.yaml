@@ -43,7 +43,18 @@ jobs:
 
       - name: Verify WebStack
         run: |
-          echo "Checking WebStack HTTP response..."
-          curl --fail --silent --show-error http://127.0.0.1:8080/
-          echo ""
-          echo "WebStack deployment successful!great work"
+          echo "Waiting for WebStack to become available..."
+
+          for i in {1..15}; do
+            if curl --fail --silent http://127.0.0.1:8080/; then
+              echo ""
+              echo "WebStack deployment successful!"
+              exit 0
+            fi
+
+            echo "Attempt $i failed. Retrying in 2 seconds..."
+            sleep 2
+          done
+
+          echo "WebStack failed to become available!"
+          exit 1
